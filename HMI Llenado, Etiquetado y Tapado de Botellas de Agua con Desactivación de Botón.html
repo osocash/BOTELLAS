@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMI Llenado, Etiquetado y Tapado de Botellas de Agua</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #e7f3fe;
+        }
+        .button {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button2 {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #ff3300;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .etapa {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .etapa.activo {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Control de Llenado, Etiquetado y Tapado de Botellas de Agua</h1>
+        <div class="status">
+            <p class="indicator">Botellas Procesadas: <span id="botellas-procesadas">0</span></p>
+            <p class="indicator">Cajas Procesadas: <span id="cajas-procesadas">0</span></p>
+            <p class="indicator">Cajas a Procesar: <input type="number" id="num-cajas" min="1" value="1"> (6 botellas por caja)</p>
+        </div>
+        <div class="etapa" id="etapa-llenado">Llenado: <span id="estado-llenado">Esperando...</span></div>
+        <div class="etapa" id="etapa-etiquetado">Etiquetado: <span id="estado-etiquetado">Esperando...</span></div>
+        <div class="etapa" id="etapa-tapado">Tapado: <span id="estado-tapado">Esperando...</span></div>
+        <button class="button" id="iniciar-btn" onclick="iniciarProceso()">Iniciar Proceso</button>
+        <button class="button2" id="exit-btn" onclick="forzarsalida()">Forzar salida</button>
+    </div>
+    <script>
+        let botellasProcesadas = 0;
+        let cajasPorProcesar = 0;
+        let cajasContadas = 0;
+        let bandera=0;
+        function forzarsalida(){
+            bandera=1;
+        }
+        function iniciarProceso() {
+            cajasPorProcesar = parseInt(document.getElementById('num-cajas').value);
+            if (cajasPorProcesar < 1) {
+                alert('Por favor, ingrese un número válido de cajas (mínimo 1).');
+                resetearProceso();
+                return;
+            }
+            botellasProcesadas = 0;
+            cajasContadas = 0;
+            document.getElementById('botellas-procesadas').innerText = botellasProcesadas;
+            document.getElementById('cajas-procesadas').innerText = cajasContadas;
+            document.getElementById('iniciar-btn').disabled = true; // Desactivar botón
+            procesarCaja();
+        }
+
+        function procesarCaja() {
+            if (botellasProcesadas < cajasPorProcesar*6
+            ) {
+                iniciarLlenado();
+            } else {
+                finalizarProceso();
+            }
+        }
+
+        function iniciarLlenado() {
+            const llenado = document.getElementById('etapa-llenado');
+            llenado.classList.add('activo');
+            document.getElementById('estado-llenado').innerText = 'Llenando...';
+            setTimeout(() => {
+                llenado.classList.remove('activo');
+                document.getElementById('estado-llenado').innerText = 'Completado';
+                
+                
+                //procesarCaja(); // Procesar siguiente botella
+                if(bandera==1){
+                    resetearProceso();
+                    return;
+                }
+                iniciarEtiquetado();
+            }, 1000); 
+            
+        }
+
+        function iniciarEtiquetado() {
+            const etiquetado = document.getElementById('etapa-etiquetado');
+            etiquetado.classList.add('activo');
+            document.getElementById('estado-etiquetado').innerText = 'Etiquetando...';
+            setTimeout(() => {
+                etiquetado.classList.remove('activo');
+                document.getElementById('estado-etiquetado').innerText = 'Completado';
+                iniciarTapado();
+            }, 1000); // 
+        }
+
+        function iniciarTapado() {
+            const tapado = document.getElementById('etapa-tapado');
+            tapado.classList.add('activo');
+            document.getElementById('estado-tapado').innerText = 'Tapando...';
+            setTimeout(() => {
+                tapado.classList.remove('activo');
+                document.getElementById('estado-tapado').innerText = 'Completado';
+                botellasProcesadas++;
+                document.getElementById('botellas-procesadas').innerText = botellasProcesadas;
+                procesarCaja(); // Procesar siguiente botella
+            }, 1000); 
+        }
+
+        function finalizarProceso() {
+            cajasContadas = Math.floor(botellasProcesadas / 6);
+            document.getElementById('cajas-procesadas').innerText = cajasContadas;
+            document.getElementById('iniciar-btn').disabled = false; // Activar botón
+            document.getElementById('botellas-procesadas').innerText = botellasProcesadas; // Mostrar total
+            //alert('Proceso completado. Total de botellas procesadas: ' + botellasProcesadas + '. Total de cajas procesadas: ' + cajasContadas);
+        }
+
+        function resetearProceso() {
+            botellasProcesadas = 0;
+            cajasContadas = 0;
+            bandera=0;
+            document.getElementById('botellas-procesadas').innerText = botellasProcesadas;
+            document.getElementById('cajas-procesadas').innerText = cajasContadas;
+            document.getElementById('iniciar-btn').disabled = false; // Activar botón
+
+        }
+    </script>
+</body>
+</html>
